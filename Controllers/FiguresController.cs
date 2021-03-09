@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FiguresDotStore.Controllers
 {
+Всё в одном файле, в одной папке. Нужно разделять по типам
 	internal interface IRedisClient
 	{
 		int Get(string type);
@@ -15,6 +16,7 @@ namespace FiguresDotStore.Controllers
 	
 	public static class FiguresStorage
 	{
+		Комментарии не приветствуются, лучше summary
 		// корректно сконфигурированный и готовый к использованию клиент Редиса
 		private static IRedisClient RedisClient { get; }
 	
@@ -33,6 +35,7 @@ namespace FiguresDotStore.Controllers
 
 	public class Position
 	{
+		почему Type с типом строка? переделать в enum
 		public string Type { get; set; }
 
 		public float SideA { get; set; }
@@ -44,6 +47,7 @@ namespace FiguresDotStore.Controllers
 
 	public class Cart
 	{
+		используй ICollection
 		public List<Position> Positions { get; set; }
 	}
 
@@ -51,6 +55,8 @@ namespace FiguresDotStore.Controllers
 	{
 		public List<Figure> Positions { get; set; }
 
+		избыточный код
+		в switch не указано решение по-умолчанию
 		public decimal GetTotal() =>
 			Positions.Select(p => p switch
 				{
@@ -74,6 +80,7 @@ namespace FiguresDotStore.Controllers
 	{
 		public override void Validate()
 		{
+			метод лучше сделать статичным
 			bool CheckTriangleInequality(float a, float b, float c) => a < b + c;
 			if (CheckTriangleInequality(SideA, SideB, SideC)
 			    && CheckTriangleInequality(SideB, SideA, SideC)
@@ -134,10 +141,15 @@ namespace FiguresDotStore.Controllers
 			_orderStorage = orderStorage;
 		}
 
+		используй summary с указанием параметров и результата
 		// хотим оформить заказ и получить в ответе его стоимость
 		[HttpPost]
 		public async Task<ActionResult> Order(Cart cart)
 		{
+			проверь на корректность входных данных, на null, на наличие позиций и не нулевое количество
+		
+			здесь переписать в Linq с выбором первого несоответствующего элемента и проверка на не null
+			не забыть сгруппировать по типу и суммировать количество
 			foreach (var position in cart.Positions)
 			{
 				if (!FiguresStorage.CheckIfAvailable(position.Type, position.Count))
@@ -146,6 +158,10 @@ namespace FiguresDotStore.Controllers
 				}
 			}
 
+			здесь спроси у аналитика, если фигура не валидная, возвращать ошибку или пропускать?
+			в начале проверяешь на валидность, потом создаёшь.
+			если аналитик скажет что если хотя бы одна не валидная, то ошибка, то проверяй все фигуры на валидность, потом проверять нет необходимости
+			если аналитик скажет что исключать невалидные, то создаёшь заказ только из валидных
 			var order = new Order
 			{
 				Positions = cart.Positions.Select(p =>
@@ -169,8 +185,9 @@ namespace FiguresDotStore.Controllers
 				FiguresStorage.Reserve(position.Type, position.Count);
 			}
 
+			добавь ожидание результата
 			var result = _orderStorage.Save(order);
-
+			
 			return new OkObjectResult(result.Result);
 		}
 	}
